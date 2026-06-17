@@ -6,7 +6,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button, select { font: inherit; }
+button { font: inherit; }
 
 .dashboard {
   width: min(1180px, 100%);
@@ -45,33 +45,30 @@ h2 { margin-bottom: 16px; font-size: 1.2rem; }
   line-height: 1.65;
 }
 
-.filters {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-.filters label {
-  display: grid;
-  gap: 6px;
-  min-width: 130px;
-  color: #dbeafe;
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-select {
-  width: 100%;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 14px;
-  padding: 11px 14px;
-  color: white;
+.period-card {
+  align-self: flex-start;
+  min-width: 190px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 18px;
   background: rgba(255, 255, 255, 0.14);
-  font-weight: 700;
 }
 
-select option { color: #172033; }
+.period-card span {
+  display: block;
+  color: #bfdbfe;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.period-card strong {
+  display: block;
+  margin-top: 8px;
+  color: white;
+  font-size: 1.25rem;
+}
 
 .kpi-grid {
   display: grid;
@@ -179,6 +176,6 @@ td { color: #1e293b; font-weight: 650; }
 @media (max-width: 680px) {
   .dashboard { padding: 16px; }
   .hero { flex-direction: column; padding: 22px; }
-  .filters, .filters label { width: 100%; }
+  .period-card { width: 100%; }
   .kpi-grid { grid-template-columns: 1fr; }
 }
