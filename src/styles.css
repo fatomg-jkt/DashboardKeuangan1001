@@ -15,3 +15,16 @@ nav { display: grid; gap: 10px; } .nav-link { width: 100%; min-height: auto; bor
 .table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 18px; } table { width: 100%; min-width: 620px; border-collapse: collapse; } th, td { padding: 14px 15px; border-bottom: 1px solid #e2e8f0; text-align: left; } tr:last-child td { border-bottom: 0; } th { color: #475569; background: #f8fafc; font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; } td { color: #1e293b; font-weight: 700; } .numeric { text-align: right; font-variant-numeric: tabular-nums; } .total-row td { background: #f8fafc; color: #0f172a; font-weight: 950; }
 .status { display: inline-flex; min-width: 108px; justify-content: center; padding: 7px 10px; border-radius: 999px; font-size: .78rem; font-weight: 950; } .status.aman { color: #166534; background: #dcfce7; } .status.perhatian { color: #92400e; background: #fef3c7; } .status.over-budget { color: #991b1b; background: #fee2e2; }
 @media (max-width: 1180px) { .app-shell { grid-template-columns: 235px minmax(0,1fr); } .kpi-grid, .two-columns { grid-template-columns: 1fr 1fr; } .topbar { flex-direction: column; } .actions { justify-content: flex-start; } }
+.fallback-page { min-height: 100vh; padding: 40px; background: #eff6ff; color: #0f172a; }
+.bar-chart { display: grid; grid-template-columns: repeat(12, minmax(26px, 1fr)); gap: 10px; height: 100%; align-items: end; padding: 10px 0 0; }
+.bar-group { display: grid; grid-template-rows: 1fr auto; gap: 8px; min-height: 100%; }
+.bars { display: flex; align-items: end; justify-content: center; gap: 4px; height: 250px; border-bottom: 1px solid #cbd5e1; }
+.bars span { width: 12px; min-height: 6px; border-radius: 9px 9px 0 0; box-shadow: 0 10px 20px rgba(15,23,42,.12); }
+.bar-group small { color: #64748b; font-weight: 900; text-align: center; }
+.line-chart { width: 100%; height: 100%; min-height: 260px; border-left: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1; background: linear-gradient(#e2e8f0 1px, transparent 1px) 0 0/100% 25%; }
+.donut-list { display: grid; gap: 14px; padding-top: 10px; }
+.donut-row { display: grid; grid-template-columns: 18px 1fr auto auto; gap: 12px; align-items: center; padding: 14px; border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc; }
+.donut-row span { width: 18px; height: 18px; border-radius: 999px; }
+.donut-row strong { color: #0f172a; }
+.donut-row em { color: #2563eb; font-style: normal; font-weight: 950; }
+.donut-row small { color: #64748b; font-weight: 800; }
