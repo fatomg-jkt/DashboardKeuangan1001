@@ -1,9 +1,11 @@
 {
-  "name": "DashboardKeuangan1001",
+  "name": "dashboard-keuangan1001",
+  "private": true,
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "python3 -m http.server 5173",
-    "build": "node --check src/main.js && node --check src/App.js && rm -rf dist && mkdir -p dist && cp index.html dist/index.html && cp -R src dist/src",
+    "dev": "npm run build && python3 -m http.server 5173 --directory dist",
+    "build": "node scripts/build.mjs",
     "preview": "python3 -m http.server 4173 --directory dist"
   },
   "dependencies": {},
