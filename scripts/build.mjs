@@ -8,11 +8,8 @@ await cp("src/styles.css", "dist/src/styles.css");
 
 const main = await readFile("src/main.jsx", "utf8");
 const browserMain = main
-  .replace('import React from "react";', 'import React from "./vendor/react.js";')
-  .replace('import ReactDOM from "react-dom/client";', 'import { createRoot } from "./vendor/react-dom-client.js";')
   .replace('import "./styles.css";\n', "")
-  .replace('import App from "./App.jsx";', 'import App from "./App.js";')
-  .replace("ReactDOM.createRoot", "createRoot");
+  .replace('import App from "./App.jsx";', 'import App from "./App.js";');
 await writeFile("dist/src/main.jsx", browserMain);
 
 const html = await readFile("index.html", "utf8");
