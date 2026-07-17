@@ -10,7 +10,7 @@ const main = await readFile("src/main.jsx", "utf8");
 const browserMain = main
   .replace('import "./styles.css";\n', "")
   .replace('import App from "./App.jsx";', 'import App from "./App.js";');
-await writeFile("dist/src/main.jsx", browserMain);
+await writeFile("dist/src/main.js", browserMain);
 
 const html = await readFile("index.html", "utf8");
 const browserHtml = html.replace(
