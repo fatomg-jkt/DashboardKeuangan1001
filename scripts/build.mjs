@@ -2,6 +2,7 @@ import { mkdir, rm, cp, readFile, writeFile } from "node:fs/promises";
 
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist/src/vendor", { recursive: true });
+try { await cp("public", "dist", { recursive: true }); } catch (error) { if (error.code !== "ENOENT") throw error; }
 await cp("src/vendor", "dist/src/vendor", { recursive: true });
 await cp("src/App.jsx", "dist/src/App.js");
 await cp("src/styles.css", "dist/src/styles.css");
