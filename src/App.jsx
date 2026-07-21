@@ -1,34 +1,140 @@
 import React, { useMemo, useState } from "./vendor/react.js";
 
-const h=React.createElement;
-const bulan=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-const bulanPanjang=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
-const departemen=["Finance","Accounting","Marketing","Operational","Human Resources","Information Technology","General Affairs"];
-const kategori=["Biaya Gaji dan Tunjangan","Biaya Marketing","Biaya Sewa","Biaya Utilitas","Biaya Transportasi","Biaya Peralatan","Biaya Perawatan","Biaya Operasional Lainnya"];
-const brands=["Nusantara Group","Arunika Retail","Samudra Digital"];
-const rupiah=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number.isFinite(n)?n:0);
-const compact=n=>`${(n/1e9).toFixed(1).replace(".0","")} M`;
-const persen=n=>`${(Number.isFinite(n)?n:0).toFixed(1)}%`;
-const bagi=(a,b)=>b? a/b*100:0;
-const data=bulan.flatMap((m,mi)=>kategori.flatMap((k,ki)=>departemen.map((d,di)=>{const budget=(18+ki*3+di*2+mi%4)*1e6;const factor=[.72,.84,.96,1.09,.88,.77,.93,1.16][ki]*(.96+(mi%3)*.025);return {bulan:m,mi,departemen:d,kategori:k,brand:brands[(di+ki)%3],budget,aktual:Math.round(budget*factor),lalu:Math.round(budget*(.71+((ki+di)%5)*.055))}})));
-const sum=(a,key)=>a.reduce((s,x)=>s+x[key],0);
-const status=(a,b)=>a>b?"over":bagi(a,b)>90?"hampir":bagi(a,b)>=80?"perhatian":"aman";
-const aggregate=(rows,key)=>Object.values(rows.reduce((o,x)=>{const n=x[key];o[n]??={name:n,budget:0,aktual:0,lalu:0};o[n].budget+=x.budget;o[n].aktual+=x.aktual;o[n].lalu+=x.lalu;return o},{}));
+const h = React.createElement;
+const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+const departments = ["Finance", "Accounting", "Marketing", "Operational", "Human Resources", "Information Technology", "General Affairs"];
+const categories = ["Gaji dan Tunjangan", "Marketing", "Sewa", "Utilitas", "Transportasi", "Peralatan", "Perawatan", "Operasional Lainnya"];
+const brands = ["Nusantara Group", "Arunika Retail", "Samudra Digital"];
+const colors = { navy: "#174A7E", blue: "#287FA6", turquoise: "#16B4C3", green: "#16A36D", yellow: "#E5AF2F", red: "#D93F3F" };
 
-function Button({children,onClick,primary=false,disabled=false}){return h("button",{className:`button ${primary?"primary":""}`,onClick,disabled},children)}
-function Panel({title,subtitle="Panel monitoring budget",actions,children,className="",id}){return h("section",{id,className:`panel ${className}`},h("header",null,h("div",null,h("h2",null,title),h("i",null,subtitle)),actions),children)}
-function Select({label,value,onChange,items,all=true}){return h("label",null,h("span",null,label),h("select",{value,onChange:e=>onChange(e.target.value)},all&&h("option",{value:"Semua"},`Semua ${label}`),items.map(x=>h("option",{key:x,value:x},x))))}
-function Tooltip({x}){if(!x)return null;return h("div",{className:"tip"},h("b",null,x.name),h("span",null,"Budget",h("strong",null,rupiah(x.budget))),h("span",null,"Aktual",h("strong",null,rupiah(x.aktual))),h("span",null,"Aktual tahun lalu",h("strong",null,rupiah(x.lalu))),h("span",null,"Selisih",h("strong",null,rupiah(x.budget-x.aktual))),h("span",null,"Penggunaan",h("strong",null,persen(bagi(x.aktual,x.budget)))))}
-function ComboChart({rows,lines=false}){const [hover,setHover]=useState(null),max=Math.max(1,...rows.flatMap(x=>[x.budget,x.aktual,x.lalu]));if(!rows.length)return h("div",{className:"empty"},"Tidak ada data untuk filter ini.");const points=key=>rows.map((x,i)=>`${i*(100/(rows.length-1||1))},${98-x[key]/max*82}`).join(" ");return h("div",{className:"chart-wrap"},h("div",{className:"chart"},h("div",{className:"grid-lines"}),h("svg",{viewBox:"0 0 100 100",preserveAspectRatio:"none"},!lines&&rows.map((x,i)=>h(React.Fragment,{key:x.name},h("rect",{x:i*100/rows.length+1,y:98-x.aktual/max*82,width:100/rows.length*.24,height:x.aktual/max*82,className:"actual"}),h("rect",{x:i*100/rows.length+100/rows.length*.29,y:98-x.lalu/max*82,width:100/rows.length*.22,height:x.lalu/max*82,className:"last"}))),h("polyline",{points:points("aktual"),className:`plot actual-line ${lines?"show":"hide"}`}),h("polyline",{points:points("budget"),className:"plot budget-line"}),rows.map((x,i)=>h("circle",{key:i,cx:i*(100/(rows.length-1||1)),cy:98-x.budget/max*82,r:1.1,className:"dot"}))),h("div",{className:"axis"},rows.map(x=>h("span",{key:x.name,onMouseEnter:()=>setHover(x),onMouseLeave:()=>setHover(null)},x.name))),hover&&h(Tooltip,{x:hover})),h("div",{className:"legend"},!lines&&h("span",null,h("i",{className:"navy"}),"Aktual"),!lines&&h("span",null,h("i",{className:"blue"}),"Aktual tahun lalu"),h("span",null,h("i",{className:"aqua"}),"Budget"),lines&&h("span",null,h("i",{className:"navy"}),"Aktual")))}
-function MiniCompare({title,rows}){const budget=sum(rows,"budget"),aktual=sum(rows,"aktual"),lalu=sum(rows,"lalu"),max=Math.max(1,budget,aktual,lalu);return h(Panel,{title,className:"mini"},h("div",{className:"mini-bars"},[["Aktual",aktual,"navy"],["Tahun lalu",lalu,"blue"],["Budget",budget,"aqua"]].map(x=>h("div",{key:x[0]},h("b",{style:{height:`${x[1]/max*100}%`},className:x[2]}),h("span",null,x[0])))),h("div",{className:"mini-stats"},h("span",null,"Budget",h("b",null,compact(budget))),h("span",null,"Aktual",h("b",null,compact(aktual))),h("span",null,"Selisih",h("b",{className:budget<aktual?"bad":"good"},compact(budget-aktual))),h("span",null,"Penggunaan",h("b",null,persen(bagi(aktual,budget))))))}
-function StatusDot({value}){return h("i",{className:`status ${value}`})}
-function SummaryTable({title,rows,ytd=false}){const grouped=aggregate(rows,"kategori"),total={name:"TOTAL",aktual:sum(grouped,"aktual"),budget:sum(grouped,"budget"),lalu:sum(grouped,"lalu")};const all=[...grouped,total];return h(Panel,{title,className:"table-panel"},h("div",{className:"table-scroll"},h("table",null,h("thead",null,h("tr",null,["Deskripsi",ytd?"Aktual YTD":"Aktual",ytd?"Budget YTD":"Budget","Selisih %",ytd?"Aktual YTD Tahun Lalu":"Aktual Tahun Lalu","Perubahan %"].map(x=>h("th",{key:x},x)))),h("tbody",null,all.length?all.map((x,i)=>{const variance=bagi(x.aktual-x.budget,x.budget),change=bagi(x.aktual-x.lalu,x.lalu);return h("tr",{key:x.name,className:i===all.length-1?"total":""},h("td",null,x.name),h("td",null,rupiah(x.aktual)),h("td",null,rupiah(x.budget)),h("td",null,h(StatusDot,{value:status(x.aktual,x.budget)}),persen(variance)),h("td",null,rupiah(x.lalu)),h("td",null,h(StatusDot,{value:change>10?"over":change>3?"perhatian":"aman"}),persen(change))) }):h("tr",null,h("td",{colSpan:6},"Tidak ada data"))))))}
+const rupiah = (value) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Number.isFinite(value) ? value : 0);
+const shortRp = (value) => `Rp${((Number.isFinite(value) ? value : 0) / 1_000_000_000).toFixed(1).replace(".0", "")} M`;
+const percent = (value) => `${(Number.isFinite(value) ? value : 0).toFixed(1)}%`;
+const safePct = (a, b) => (b ? (a / b) * 100 : 0);
+const sum = (rows, key) => rows.reduce((total, row) => total + (Number(row[key]) || 0), 0);
 
-function DonutChart({rows,titleKey="kategori"}){const grouped=aggregate(rows,titleKey).sort((a,b)=>b.aktual-a.aktual).slice(0,5);const total=sum(grouped,"aktual")||1;let acc=0;const colors=["#c89b3c","#7699c3","#54c98b","#e1ad52","#9aacc2"];return h("div",{className:"donut-card"},h("div",{className:"donut",style:{background:`conic-gradient(${grouped.map((x,i)=>{const start=acc/total*100;acc+=x.aktual;return `${colors[i]} ${start}% ${acc/total*100}%`}).join(",")})`}},h("div",null,h("b",null,persen(bagi(sum(grouped,"aktual"),sum(grouped,"budget"))),h("span",null,"Realisasi"))),h("div",{className:"donut-list"},grouped.map((x,i)=>h("div",{key:x.name},h("i",{style:{background:colors[i]}}),h("span",null,x.name),h("b",null,compact(x.aktual))))))}
-function DeptBars({rows}){const grouped=aggregate(rows,"departemen").sort((a,b)=>b.aktual/a.budget-a.aktual/a.budget);return h("div",{className:"dept-bars"},grouped.map(x=>h("div",{key:x.name},h("div",{className:"dept-row"},h("span",null,x.name),h("b",{className:x.aktual>x.budget?"bad":""},persen(bagi(x.aktual,x.budget)))),h("em",null,h("i",{style:{width:`${Math.min(100,bagi(x.aktual,x.budget))}%`}}))))) }
-function TopVariance({rows}){const grouped=aggregate(rows,"kategori").map(x=>({...x,variance:x.budget-x.aktual,usage:bagi(x.aktual,x.budget)})).sort((a,b)=>Math.abs(b.variance)-Math.abs(a.variance)).slice(0,5);return h("div",{className:"variance-list"},grouped.map(x=>h("div",{key:x.name},h("span",null,x.name,h("small",null,persen(x.usage))),h("b",{className:x.variance<0?"bad":"good"},rupiah(x.variance))))) }
-function Gauge({value}){const safe=Math.max(0,Math.min(100,value));return h("div",{className:"gauge-wrap"},h("div",{className:"gauge",style:{"--value":`${safe*1.8}deg`}},h("div",null,h("b",null,persen(value)),h("span",null,"Penggunaan YTD"))),h("p",null,value>100?"Realisasi melewati pagu budget.":value>90?"Perlu pengawasan menjelang akhir periode.":"Kinerja budget masih dalam rentang aman."))}
-function InsightPanel({budget,aktual,over,top}){return h("section",{className:"insight-panel"},h("div",{className:"insight-icon"},"✦"),h("div",null,h("h2",null,"Executive Insight"),h("ul",null,h("li",null,`Realisasi YTD mencapai ${persen(bagi(aktual,budget))} dari total budget terfilter.`),h("li",null,`${over} kategori berada di atas pagu budget dan perlu ditinjau.`),h("li",null,`Varians terbesar saat ini: ${top?.name||"-"} (${rupiah((top?.budget||0)-(top?.aktual||0))}).`))))) }
+const dataset = months.flatMap((month, monthIndex) => categories.flatMap((category, categoryIndex) => departments.map((department, departmentIndex) => {
+  const budget = (24 + categoryIndex * 4.2 + departmentIndex * 2.7 + (monthIndex % 4) * 1.4) * 1_000_000;
+  const usageBase = [0.73, 0.86, 0.95, 1.08, 0.82, 0.76, 0.91, 1.14][categoryIndex];
+  const monthFactor = 0.96 + (monthIndex % 5) * 0.018;
+  const deptFactor = 0.985 + (departmentIndex % 3) * 0.012;
+  const actual = Math.round(budget * usageBase * monthFactor * deptFactor);
+  const previousActual = Math.round(budget * (0.70 + ((categoryIndex + departmentIndex + monthIndex) % 6) * 0.045));
+  return { year: 2026, month, monthIndex, brand: brands[(categoryIndex + departmentIndex) % brands.length], department, category, budget, actual, previousActual };
+})));
 
-function UploadModal({close}){const [type,setType]=useState("Master Budget"),[file,setFile]=useState(null),[rows,setRows]=useState([]);const read=e=>{const f=e.target.files?.[0];setFile(f||null);if(!f)return;const reader=new FileReader();reader.onload=()=>setRows(String(reader.result).split(/\r?\n/).filter(Boolean).slice(0,7).map((line,i)=>({line:i+1,cells:line.split(","),valid:i===0||line.split(",").length>=8})));reader.readAsText(f)};const confirm=()=>{localStorage.setItem("finance-import",JSON.stringify({type,file:file?.name,count:Math.max(0,rows.length-1),date:new Date().toISOString()}));alert("Data berhasil disimpan di perangkat ini.");close()};return h("div",{className:"modal-bg",onMouseDown:e=>e.target===e.currentTarget&&close()},h("div",{className:"modal"},h("header",null,h("div",null,h("small",null,"IMPORT DATA KEUANGAN"),h("h2",null,"Upload Data")),h("button",{onClick:close},"×")),h("div",{className:"tabs"},["Master Budget","Data Aktual","Aktual Tahun Sebelumnya"].map(x=>h("button",{key:x,className:type===x?"active":"",onClick:()=>setType(x)},x))),h("label",{className:"drop"},h("strong",null,"↑"),h("b",null,file?.name||"Pilih file Excel atau CSV"),h("span",null,"CSV atau XLSX, maksimal 10 MB"),h("input",{type:"file",accept:".csv,.xlsx",onChange:read})),file&&h("div",{className:"file-info"},h("b",null,file.name),h("span",null,`${Math.max(0,rows.length-1)} baris terdeteksi`)),rows.length>0&&h("div",{className:"preview"},h("b",null,"Preview & validasi"),rows.map(r=>h("div",{key:r.line},h(StatusDot,{value:r.valid?"aman":"over"}),h("span",null,`Baris ${r.line}: ${r.cells.slice(0,4).join(" · ")}`),h("em",null,r.valid?"Valid":"Kolom wajib belum lengkap")))),h("footer",null,h(Button,{onClick:close},"Batal"),h(Button,{primary:true,disabled:!file||rows.some((r,i)=>i>0&&!r.valid),onClick:confirm},"Konfirmasi Import"))))}
-export default function App(){const [filters,setFilters]=useState({tahun:"2026",bulan:"Desember",departemen:"Semua",kategori:"Semua",brand:"Semua"}),[upload,setUpload]=useState(false),[updated,setUpdated]=useState(new Date()),[op,setOp]=useState("Biaya Operasional Lainnya"),[dept,setDept]=useState("Finance"),[sidebarOpen,setSidebarOpen]=useState(false);const filtered=useMemo(()=>data.filter(x=>(filters.departemen==="Semua"||x.departemen===filters.departemen)&&(filters.kategori==="Semua"||x.kategori===filters.kategori)&&(filters.brand==="Semua"||x.brand===filters.brand)),[filters]);const monthIndex=Math.max(0,bulanPanjang.indexOf(filters.bulan));const current=filtered.filter(x=>x.mi===monthIndex),ytd=filtered.filter(x=>x.mi<=monthIndex),trend=aggregate(filtered,"bulan").sort((a,b)=>bulan.indexOf(a.name)-bulan.indexOf(b.name));const budget=sum(ytd,"budget"),aktual=sum(ytd,"aktual"),over=aggregate(ytd,"kategori").filter(x=>x.aktual>x.budget).length;const topVariance=aggregate(ytd,"kategori").map(x=>({...x,variance:Math.abs(x.budget-x.aktual)})).sort((a,b)=>b.variance-a.variance)[0];const update=(k,v)=>setFilters({...filters,[k]:v});const nav=[ ["Dashboard","#dashboard","▣"],["Input Budget","#upload","✎"],["Budget vs Aktual","#budget-aktual","◈"],["Laporan Budget","#laporan-budget","▤"],["Analisis Varians","#analisis-varians","⌁"],["Upload Data","#upload","⇧"],["Pengaturan","#pengaturan","⚙"] ];const go=(href)=>{setSidebarOpen(false); if(href==="#upload") setUpload(true); else document.querySelector(href)?.scrollIntoView({behavior:"smooth",block:"start"})};const kpis=[["Total Budget",rupiah(budget),"◎","Budget YTD terfilter","good"],["Total Aktual",rupiah(aktual),"◍","Realisasi berjalan",aktual>budget?"bad":"good"],["Realisasi Budget",persen(bagi(aktual,budget)),"◒","Pemakaian terhadap budget",bagi(aktual,budget)>100?"bad":bagi(aktual,budget)>90?"warn":"good"],["Sisa Budget",rupiah(budget-aktual),"◌",budget>=aktual?"Masih tersedia":"Melebihi budget",budget>=aktual?"good":"bad"],["Kategori Over Budget",String(over),"!","Kategori melewati pagu",over?"bad":"good"]];return h("main",{className:`app-shell ${sidebarOpen?"drawer-open":""}`},h("div",{className:"backdrop",onClick:()=>setSidebarOpen(false)}),h("aside",{className:"sidebar"},h("div",{className:"brand-block"},h("div",{className:"logo"},"FD"),h("div",null,h("strong",null,"FINANCE DASHBOARD"),h("span",null,"Budget Monitoring"))),h("nav",null,nav.map((n,i)=>h("button",{key:n[0],className:i===0?"active":"",onClick:()=>go(n[1])},h("i",null,n[2]),h("span",null,n[0])))),h("div",{className:"quote"},"“Perencanaan yang baik adalah langkah awal menuju hasil yang lebih baik.”")),h("section",{className:"report",id:"dashboard"},h("header",{className:"masthead"},h("button",{className:"hamburger",onClick:()=>setSidebarOpen(true)},"☰"),h("div",{className:"identity"},h("small",null,"Finance Accounting"),h("h1",null,"Dashboard Budgeting"),h("p",null,"Ringkasan kinerja budget dan aktual perusahaan.")),h("div",{className:"header-tools"},h("div",{className:"period-pill"},h("span",null,"Periode"),h("b",null,`Jan – ${filters.bulan} 2026`)),h(Button,{onClick:()=>setUpload(true)},"Upload"),h(Button,{primary:true,onClick:()=>setUpdated(new Date())},"Refresh"))),h("div",{className:"filters"},h(Select,{label:"Tahun",value:filters.tahun,onChange:v=>update("tahun",v),items:["2026"],all:false}),h(Select,{label:"Bulan",value:filters.bulan,onChange:v=>update("bulan",v),items:bulanPanjang,all:false}),h(Select,{label:"Departemen",value:filters.departemen,onChange:v=>update("departemen",v),items:departemen}),h(Select,{label:"Kategori",value:filters.kategori,onChange:v=>update("kategori",v),items:kategori}),h(Select,{label:"Brand",value:filters.brand,onChange:v=>update("brand",v),items:brands})),h("div",{className:"kpis"},kpis.map((x,i)=>h("div",{key:x[0]},h("em",{className:"kpi-icon"},x[2]),h("span",null,x[0]),h("b",{className:x[4]},x[1]),h("small",null,x[3]),i===2&&h("i",null,h("em",{style:{width:`${Math.min(100,bagi(aktual,budget))}%`}}))))),h("div",{className:"dashboard-grid"},h(Panel,{id:"budget-aktual",title:"Budget vs Aktual",subtitle:"Tren bulanan budget, aktual, dan realisasi tahun lalu",className:"hero chart-panel"},h(ComboChart,{rows:trend})),h(Panel,{title:"Komposisi Kategori",subtitle:"Distribusi aktual YTD",className:"donut-panel"},h(DonutChart,{rows:ytd})),h(Panel,{title:"Realisasi per Departemen",subtitle:"Persentase penggunaan budget YTD",className:"dept-panel"},h(DeptBars,{rows:ytd})),h(Panel,{title:"Gauge Realisasi",subtitle:"Indikator penggunaan total",className:"gauge-panel"},h(Gauge,{value:bagi(aktual,budget)})),h(Panel,{title:"Top Varians Terbesar",subtitle:"Selisih budget terhadap aktual",className:"variance-panel"},h(TopVariance,{rows:ytd})),h(Panel,{id:"analisis-varians",title:"Budget Operasional – Tren",subtitle:"Analisis kategori operasional",className:"wide",actions:h("select",{value:op,onChange:e=>setOp(e.target.value)},kategori.map(x=>h("option",{key:x},x)))},h(ComboChart,{lines:true,rows:aggregate(filtered.filter(x=>x.kategori===op),"bulan")})),h("div",{id:"laporan-budget",className:"wide"},h(SummaryTable,{title:"Ringkasan Budget Bulan Ini",rows:current})),h(Panel,{title:"Budget Departemen – Tren 12 Bulan",subtitle:"Pilih departemen untuk melihat tren",className:"wide",actions:h("select",{value:dept,onChange:e=>setDept(e.target.value)},departemen.map(x=>h("option",{key:x},x)))},h(ComboChart,{lines:true,rows:aggregate(filtered.filter(x=>x.departemen===dept),"bulan")})),h("div",{className:"wide"},h(SummaryTable,{title:"Ringkasan Budget Year-to-Date",rows:ytd,ytd:true}))),h(InsightPanel,{budget,aktual,over,top:topVariance}),h("div",{id:"pengaturan",className:"settings-note"},"Pengaturan visual dashboard menggunakan tema Luxury Black and Gold Finance."),h("footer",{className:"page-footer"},"Laporan internal • Finance Accounting • Terakhir diperbarui ",updated.toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"})),upload&&h(UploadModal,{close:()=>setUpload(false)})))}
+function aggregate(rows, key) {
+  return Object.values(rows.reduce((acc, row) => {
+    const name = row[key];
+    acc[name] ||= { name, budget: 0, actual: 0, previousActual: 0 };
+    acc[name].budget += row.budget;
+    acc[name].actual += row.actual;
+    acc[name].previousActual += row.previousActual;
+    return acc;
+  }, {}));
+}
+
+function statusFor(actual, budget) {
+  const pct = safePct(actual, budget);
+  if (pct > 100) return "over";
+  if (pct > 90) return "hampir";
+  if (pct >= 80) return "perhatian";
+  return "aman";
+}
+
+function Select({ label, value, onChange, items, all = true }) {
+  return h("label", { className: "field" }, h("span", null, label), h("select", { value, onChange: (event) => onChange(event.target.value) }, all && h("option", { value: "Semua" }, `Semua ${label}`), items.map((item) => h("option", { key: item, value: item }, item))));
+}
+
+function Button({ children, onClick, primary = false, disabled = false }) {
+  return h("button", { className: `button ${primary ? "primary" : ""}`, onClick, disabled }, children);
+}
+
+function Panel({ title, children, actions, compact = false }) {
+  return h("section", { className: `panel ${compact ? "compact" : ""}` }, h("header", { className: "panel-title" }, h("h2", null, title), actions), children);
+}
+
+function Chart({ rows, mode = "combo" }) {
+  const [hover, setHover] = useState(null);
+  const max = Math.max(1, ...rows.flatMap((row) => [row.budget, row.actual, row.previousActual]));
+  const point = (key, index) => `${index * (100 / Math.max(1, rows.length - 1))},${96 - (rows[index][key] / max) * 82}`;
+  if (!rows.length) return h("div", { className: "empty" }, "Tidak ada data untuk filter ini.");
+  return h("div", { className: "chart-wrap" },
+    h("div", { className: "chart-canvas" },
+      h("svg", { viewBox: "0 0 100 100", preserveAspectRatio: "none" },
+        mode !== "line" && rows.map((row, index) => h(React.Fragment, { key: row.name },
+          h("rect", { className: "bar actual", x: index * (100 / rows.length) + 1, y: 96 - (row.actual / max) * 82, width: (100 / rows.length) * 0.24, height: (row.actual / max) * 82 }),
+          h("rect", { className: "bar previous", x: index * (100 / rows.length) + (100 / rows.length) * 0.29, y: 96 - (row.previousActual / max) * 82, width: (100 / rows.length) * 0.22, height: (row.previousActual / max) * 82 })
+        )),
+        mode === "grouped" && rows.map((row, index) => h("rect", { key: `b-${row.name}`, className: "bar budget", x: index * (100 / rows.length) + (100 / rows.length) * 0.55, y: 96 - (row.budget / max) * 82, width: (100 / rows.length) * 0.22, height: (row.budget / max) * 82 })),
+        mode !== "grouped" && h("polyline", { className: "line budget-line", points: rows.map((_, i) => point("budget", i)).join(" ") }),
+        mode === "line" && h("polyline", { className: "line actual-line", points: rows.map((_, i) => point("actual", i)).join(" ") }),
+        mode !== "grouped" && rows.map((_, i) => h("circle", { key: i, className: "marker", cx: i * (100 / Math.max(1, rows.length - 1)), cy: 96 - (rows[i].budget / max) * 82, r: 1.15 }))
+      ),
+      h("div", { className: "axis" }, rows.map((row) => h("span", { key: row.name, onMouseEnter: () => setHover(row), onMouseLeave: () => setHover(null) }, row.name))),
+      hover && h("div", { className: "tooltip" }, h("b", null, hover.name), h("span", null, "Budget", h("strong", null, rupiah(hover.budget))), h("span", null, "Aktual", h("strong", null, rupiah(hover.actual))), h("span", null, "Aktual Tahun Lalu", h("strong", null, rupiah(hover.previousActual))), h("span", null, "Selisih", h("strong", null, rupiah(hover.budget - hover.actual))), h("span", null, "Persentase Realisasi", h("strong", null, percent(safePct(hover.actual, hover.budget)))))
+    ),
+    h("div", { className: "legend" }, mode !== "line" && h("span", null, h("i", { className: "navy" }), "Aktual"), mode !== "line" && h("span", null, h("i", { className: "blue" }), "Aktual Tahun Lalu"), h("span", null, h("i", { className: "turquoise" }), "Budget"), mode === "line" && h("span", null, h("i", { className: "navy" }), "Aktual"))
+  );
+}
+
+function SummaryTable({ title, rows, ytd = false }) {
+  const grouped = aggregate(rows, "category");
+  const total = { name: "Total", actual: sum(grouped, "actual"), budget: sum(grouped, "budget"), previousActual: sum(grouped, "previousActual") };
+  const data = grouped.length ? [...grouped, total] : [];
+  return h(Panel, { title }, h("div", { className: "table-scroll" }, h("table", null, h("thead", null, h("tr", null, ["Deskripsi", ytd ? "Aktual YTD" : "Aktual", ytd ? "Budget YTD" : "Budget", "Varians %", ytd ? "Aktual YTD Tahun Lalu" : "Aktual Tahun Lalu", "Perubahan %"].map((head) => h("th", { key: head }, head)))), h("tbody", null, data.length ? data.map((row, index) => h("tr", { key: row.name, className: index === data.length - 1 ? "total" : "" }, h("td", null, h("i", { className: `status ${statusFor(row.actual, row.budget)}` }), row.name), h("td", null, rupiah(row.actual)), h("td", null, rupiah(row.budget)), h("td", null, percent(safePct(row.actual - row.budget, row.budget))), h("td", null, rupiah(row.previousActual)), h("td", null, percent(safePct(row.actual - row.previousActual, row.previousActual))))) : h("tr", null, h("td", { colSpan: 6 }, "Tidak ada data"))))));
+}
+
+function MiniChart({ title, rows, ytd = false }) {
+  const budget = sum(rows, "budget");
+  const actual = sum(rows, "actual");
+  const previousActual = sum(rows, "previousActual");
+  const chartRows = [{ name: ytd ? "YTD" : "Bulan Ini", budget, actual, previousActual }];
+  return h(Panel, { title, compact: true }, h(Chart, { rows: chartRows, mode: "grouped" }), ytd && h("div", { className: "mini-summary" }, h("span", null, "Total Budget YTD", h("b", null, shortRp(budget))), h("span", null, "Total Aktual YTD", h("b", null, shortRp(actual))), h("span", null, "Selisih YTD", h("b", { className: budget >= actual ? "good" : "bad" }, shortRp(budget - actual))), h("span", null, "Realisasi YTD", h("b", null, percent(safePct(actual, budget))))));
+}
+
+function UploadModal({ onClose }) {
+  const [type, setType] = useState("Master Budget");
+  const [rows, setRows] = useState([]);
+  const [file, setFile] = useState(null);
+  const required = type === "Master Budget" ? ["Tahun", "Bulan", "Brand", "Departemen", "Kategori", "Kode Budget", "Deskripsi Budget", "Nilai Budget"] : ["Tanggal", "Tahun", "Bulan", "Brand", "Departemen", "Kategori", "Kode Budget", "Deskripsi", "Nilai Aktual", "Nomor Referensi", "Vendor"];
+  function read(event) {
+    const selected = event.target.files?.[0];
+    setFile(selected || null);
+    if (!selected) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const lines = String(reader.result).split(/\r?\n/).filter(Boolean).slice(0, 8);
+      const header = (lines[0] || "").split(",").map((cell) => cell.trim());
+      setRows(lines.map((line, index) => {
+        const cells = line.split(",");
+        const missing = index === 0 ? required.filter((column) => !header.includes(column)) : [];
+        const numberCell = Number(cells[type === "Master Budget" ? 7 : 8]);
+        const dateInvalid = type !== "Master Budget" && index > 0 && Number.isNaN(Date.parse(cells[0]));
+        return { line: index + 1, text: cells.slice(0, 5).join(" · "), valid: index === 0 ? missing.length === 0 : cells.length >= required.length && Number.isFinite(numberCell) && !dateInvalid, error: index === 0 && missing.length ? `Kolom wajib belum ada: ${missing.join(", ")}` : dateInvalid ? "Tanggal tidak valid" : !Number.isFinite(numberCell) && index > 0 ? "Nilai angka tidak valid" : "Valid" };
+      }));
+    };
+    reader.readAsText(selected);
+  }
+  function confirm() { localStorage.setItem("budget-dashboard-import", JSON.stringify({ type, file: file?.name, count: Math.max(0, rows.length - 1), importedAt: new Date().toISOString() })); alert("Import dikonfirmasi dan tersimpan di localStorage."); onClose(); }
+  return h("div", { className: "modal-bg", onMouseDown: (event) => event.target === event.currentTarget && onClose() }, h("div", { className: "modal" }, h("header", null, h("div", null, h("small", null, "UPLOAD DATA"), h("h2", null, "Import Budget dan Aktual")), h("button", { onClick: onClose }, "×")), h("div", { className: "tabs" }, ["Master Budget", "Data Aktual", "Aktual Tahun Sebelumnya"].map((item) => h("button", { key: item, className: type === item ? "active" : "", onClick: () => setType(item) }, item))), h("label", { className: "dropzone" }, h("b", null, file?.name || "Pilih file CSV/XLSX"), h("span", null, `Kolom wajib: ${required.join(", ")}`), h("input", { type: "file", accept: ".csv,.xlsx", onChange: read })), file && h("p", { className: "row-count" }, `${Math.max(0, rows.length - 1)} baris data terdeteksi`), rows.length > 0 && h("div", { className: "preview" }, rows.map((row) => h("div", { key: row.line }, h("i", { className: `status ${row.valid ? "aman" : "over"}` }), h("span", null, `Baris ${row.line}: ${row.text}`), h("em", null, row.error)))), h("footer", null, h(Button, { onClick: onClose }, "Batal"), h(Button, { primary: true, disabled: !file || rows.some((row) => !row.valid), onClick: confirm }, "Konfirmasi Import"))));
+}
+
+export default function App() {
+  const [filters, setFilters] = useState({ year: "2026", month: "Desember", department: "Semua", category: "Semua", brand: "Semua" });
+  const [opCategory, setOpCategory] = useState("Operasional Lainnya");
+  const [trendDepartment, setTrendDepartment] = useState("Finance");
+  const [updatedAt, setUpdatedAt] = useState(new Date());
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const monthIndex = monthNames.indexOf(filters.month);
+  const filtered = useMemo(() => dataset.filter((row) => (filters.department === "Semua" || row.department === filters.department) && (filters.category === "Semua" || row.category === filters.category) && (filters.brand === "Semua" || row.brand === filters.brand)), [filters]);
+  const currentRows = filtered.filter((row) => row.monthIndex === monthIndex);
+  const ytdRows = filtered.filter((row) => row.monthIndex <= monthIndex);
+  const trendRows = aggregate(filtered, "month").sort((a, b) => months.indexOf(a.name) - months.indexOf(b.name));
+  const budget = sum(ytdRows, "budget");
+  const actual = sum(ytdRows, "actual");
+  const overCount = aggregate(ytdRows, "category").filter((row) => row.actual > row.budget).length;
+  const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
+  return h("main", { className: "app" }, h("header", { className: "topbar" }, h("div", null, h("p", null, "Finance Accounting Dashboard"), h("h1", null, "Dashboard Budget vs Aktual"), h("span", null, "Monitoring perbandingan anggaran, realisasi, varians, dan pencapaian penggunaan budget perusahaan.")), h("div", { className: "actions" }, h(Button, { primary: true, onClick: () => setUploadOpen(true) }, "Upload Data"), h(Button, { onClick: () => setUpdatedAt(new Date()) }, "Refresh"), h("small", null, "Terakhir diperbarui: ", updatedAt.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })))), h("section", { className: "filters" }, h(Select, { label: "Tahun", value: filters.year, onChange: (value) => updateFilter("year", value), items: ["2026"], all: false }), h(Select, { label: "Bulan", value: filters.month, onChange: (value) => updateFilter("month", value), items: monthNames, all: false }), h(Select, { label: "Departemen", value: filters.department, onChange: (value) => updateFilter("department", value), items: departments }), h(Select, { label: "Kategori", value: filters.category, onChange: (value) => updateFilter("category", value), items: categories }), h(Select, { label: "Brand atau Perusahaan", value: filters.brand, onChange: (value) => updateFilter("brand", value), items: brands })), h("section", { className: "kpi-strip" }, [["Total Budget", rupiah(budget)], ["Total Aktual", rupiah(actual)], ["Sisa Budget", rupiah(budget - actual)], ["Persentase Realisasi", percent(safePct(actual, budget))], ["Jumlah Kategori Over Budget", overCount]].map(([label, value]) => h("article", { key: label }, h("span", null, label), h("b", null, value)))), h("section", { className: "dashboard-grid" }, h(Panel, { title: "Total Budget vs Aktual – Tren" }, h(Chart, { rows: trendRows, mode: "combo" })), h("div", { className: "right-pair" }, h(MiniChart, { title: "Budget vs Aktual – Bulan Ini", rows: currentRows }), h(MiniChart, { title: "Budget vs Aktual – Year-to-Date", rows: ytdRows, ytd: true })), h(Panel, { title: "Budget Operasional – Tren", actions: h("select", { value: opCategory, onChange: (event) => setOpCategory(event.target.value) }, categories.map((item) => h("option", { key: item }, item))) }, h(Chart, { rows: aggregate(filtered.filter((row) => row.category === opCategory), "month").sort((a, b) => months.indexOf(a.name) - months.indexOf(b.name)), mode: "line" })), h(SummaryTable, { title: "Ringkasan Budget Bulan Ini", rows: currentRows }), h(Panel, { title: "Realisasi Budget – Tren 12 Bulan", actions: h("select", { value: trendDepartment, onChange: (event) => setTrendDepartment(event.target.value) }, departments.map((item) => h("option", { key: item }, item))) }, h(Chart, { rows: aggregate(filtered.filter((row) => row.department === trendDepartment), "month").sort((a, b) => months.indexOf(a.name) - months.indexOf(b.name)), mode: "line" })), h(SummaryTable, { title: "Ringkasan Budget Year-to-Date", rows: ytdRows, ytd: true })), uploadOpen && h(UploadModal, { onClose: () => setUploadOpen(false) }));
+}
