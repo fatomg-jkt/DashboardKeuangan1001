@@ -9,5 +9,18 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.js"></script>
+    <script>
+      const brandingObserver = new MutationObserver(() => {
+        const branding = document.querySelector('.identity small');
+        if (branding && branding.textContent !== '1001 & Maison Accounting') {
+          branding.textContent = '1001 & Maison Accounting';
+        }
+      });
+
+      brandingObserver.observe(document.getElementById('root'), {
+        childList: true,
+        subtree: true,
+      });
+    </script>
   </body>
 </html>
